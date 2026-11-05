@@ -1,0 +1,112 @@
+PACOTE DO TRATAMENTO MOSC -> MySQL
+
+Conteudo
+  saida_tratamento/MOSC_tratada.csv.gz  base tratada (1.113.949 linhas, 62 colunas; o importador descompacta sozinho)
+  saida_tratamento/*.csv                dimensoes, CNAE secundario (1:N), auditoria de coordenadas, log, dicionario
+  saida_tratamento/schema.sql           DDL das 7 tabelas
+  importar_mysql.py                     cria o schema e carrega tudo com LOAD DATA LOCAL INFILE
+  tratamento_dados_MOSC.ipynb/.html     notebook com todo o tratamento
+
+Como importar
+  1) No MySQL:   SET GLOBAL local_infile = 1;
+  2) pip install pymysql
+  3) python importar_mysql.py --host localhost --user root --password SUA_SENHA --database mosc --pasta saida_tratamento --recriar
+     (--recriar APAGA o banco mosc antes de criar)
+
+Conferencia esperada
+  SELECT situacao_cadastral, COUNT(*) FROM osc GROUP BY 1;
+    Ativa 624.629 | Inapta 337.024 | Nula ou Baixada 145.930 | Suspensa 6.366
+  SELECT COUNT(*) FROM osc;                 -- 1.113.949
+  SELECT COUNT(*) FROM osc_cnae_secundario; -- 1.290.869
+
+
+# Importar a base MOSC tratada para o MySQL
+
+## Requisitos
+- MySQL 8.x (ou MariaDB 10.x) instalado e **rodando** no computador
+- Python 3.9+
+- ~2 GB livres em disco (o importador descompacta um CSV de ~400 MB)
+- Tempo: cerca de 10 minutos (a tabela `osc` leva ~6 min e a de CNAEs secundários ~2 min no teste feito)
+
+## 1. Obter os arquivos
+Clone o repositório e baixe a base tratada (`MOSC_tratada.csv.gz`) na aba **Releases**.
+Coloque o arquivo dentro da pasta `saida_tratamento/`:
+
+```
+importar_mysql.py
+saida_tratamento/
+├── MOSC_tratada.csv.gz      <- baixado em Releases
+├── schema.sql
+└── (demais .csv)
+```
+
+## 2. Instalar as dependências
+```bash
+pip install pymysql cryptography
+```
+(`cryptography` é necessário para a autenticação padrão do MySQL 8.)
+
+## 3. Criar o usuário e o banco (uma vez)
+Conecte no MySQL como administrador (MySQL Workbench, ou `mysql -u root -p`) e execute:
+
+```sql
+CREATE DATABASE IF NOT EXISTS mosc CHARACTER SET utf8mb4;
+CREATE USER IF NOT EXISTS 'mosc'@'localhost' IDENTIFIED BY 'TROQUE_ESTA_SENHA';
+GRANT ALL PRIVILEGES ON mosc.* TO 'mosc'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+## 4. Habilitar o carregamento local no servidor
+O importador usa `LOAD DATA LOCAL INFILE`, que precisa estar ligado no servidor:
+
+```sql
+SET GLOBAL local_infile = 1;
+SHOW GLOBAL VARIABLES LIKE 'local_infile';   -- deve mostrar ON
+```
+Esse ajuste volta a `OFF` quando o servidor reinicia. Para torná-lo permanente, adicione
+`local_infile=1` na seção `[mysqld]` do `my.cnf` (no Windows, `my.ini`).
+
+Sem o cliente `mysql` no PATH (comum no Windows)? Use o Workbench, ou:
+```bash
+python ativar_local_infile.py
+```
+(exige um usuário com permissão de administrador).
+
+## 5. Rodar o importador
+Na pasta que contém `importar_mysql.py` e `saida_tratamento/`:
+
+```bash
+python importar_mysql.py --host localhost --user mosc --password "TROQUE_ESTA_SENHA" --database mosc --pasta saida_tratamento --recriar
+```
+
+> **Atenção:** `--recriar` **apaga o banco `mosc`** antes de criá-lo.
+> Para preservar um banco existente, use outro valor em `--database` e remova `--recriar`.
+
+Saída esperada: todas as tabelas com `OK`, três verificações de integridade com `0` e `Concluído.`
+
+## 6. Conferir
+```sql
+USE mosc;
+SELECT COUNT(*) FROM osc;                                  -- 1.113.949
+SELECT situacao_cadastral, COUNT(*) FROM osc GROUP BY 1;   -- Ativa 624.629 | Inapta 337.024 | Nula ou Baixada 145.930 | Suspensa 6.366
+SELECT COUNT(*) FROM osc_cnae_secundario;                  -- 1.290.869
+```
+
+## Tabelas criadas
+| Tabela | Conteúdo |
+|---|---|
+| `osc` | 1 linha por CNPJ, com flags de área e de qualidade |
+| `dim_uf`, `dim_municipio`, `dim_natureza_juridica` | Dimensões |
+| `osc_cnae_secundario` | CNAEs secundários (relação 1:N com `osc`) |
+| `aud_coordenada_ajustada` | Valores originais das coordenadas corrigidas |
+| `log_tratamento` | Regras de tratamento aplicadas e registros afetados |
+
+## Problemas comuns
+| Erro | Causa e solução |
+|---|---|
+| `'cryptography' package is required` | Rode `pip install cryptography` |
+| `Access denied ... to database 'mosc'` (1044) | O usuário não tem permissão: refaça o `GRANT` do passo 3 |
+| `Access denied for user` (1045) | Usuário ou senha incorretos |
+| `Loading local data is disabled` (3948 / 1148) | Refaça o passo 4 (o `local_infile` voltou a `OFF`) |
+| `Can't connect to MySQL server` | O serviço do MySQL não está rodando |
+| `mysql` não reconhecido no Windows | Use o MySQL Workbench ou o caminho completo de `mysql.exe` |

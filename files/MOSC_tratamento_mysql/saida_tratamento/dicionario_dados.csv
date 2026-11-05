@@ -1,0 +1,60 @@
+coluna,tipo_sql,aceita_nulo,descricao
+cnpj,CHAR(14),False,"CNPJ completo, 14 dígitos (chave primária)"
+cnpj_basico,CHAR(8),False,Raiz do CNPJ (identifica a entidade; matriz e filiais compartilham)
+cnpj_ordem,CHAR(4),False,Ordem do estabelecimento no CNPJ (0001 = matriz)
+razao_social,VARCHAR(220),False,"Razão social padronizada (maiúsculas, sem espaços extras)"
+nome_fantasia,VARCHAR(140),True,Nome fantasia; NULL quando não informado
+natureza_juridica_cod,CHAR(4),True,Código da natureza jurídica (FK dim_natureza_juridica); NULL = não informada
+tipo_estabelecimento,VARCHAR(7),False,Matriz ou Filial (derivado da ordem do CNPJ quando não informado)
+situacao_cadastral,VARCHAR(15),False,"Ativa, Inapta, Suspensa ou Nula ou Baixada"
+removida_do_mosc,TINYINT(1),False,1 = removida do MOSC
+dt_fundacao,DATE,True,Data de fundação; NULL quando ausente
+ano_fundacao,SMALLINT,True,Ano da data de fundação
+dt_fechamento,DATE,True,Data de fechamento/saída do cadastro (existe só para parte das baixadas)
+ano_fechamento,SMALLINT,True,Ano da data de fechamento
+endereco_completo,VARCHAR(290),True,Endereço padronizado
+cd_municipio,CHAR(7),True,Código IBGE do município (FK dim_municipio); NULL quando inválido
+uf,CHAR(2),True,Sigla da UF (FK dim_uf); imputada pelo código IBGE quando ausente
+latitude,"DECIMAL(9,6)",True,"Latitude em graus decimais (6 casas, ~0,1 m)"
+longitude,"DECIMAL(9,6)",True,"Longitude em graus decimais (6 casas, ~0,1 m)"
+cnae,CHAR(5),True,CNAE principal (5 dígitos); NULL quando ausente ou inválido
+n_cnae_sec,SMALLINT,False,Nº de CNAEs secundários distintos (valor original)
+n_cnae_sec_aj,SMALLINT,False,"Nº de CNAEs secundários com teto no percentil 99,9"
+sem_classificacao_area,TINYINT(1),False,1 = OSC sem classificação de área/subárea na origem (flags preenchidas com 0)
+area_assistencia_social,TINYINT(1),False,Atua em Assistência social (1/0)
+area_assoc_patronais_profissionais,TINYINT(1),False,Atua em Associações patronais e profissionais (1/0)
+area_cultura_recreacao,TINYINT(1),False,Atua em Cultura e recreação (1/0)
+area_desenv_defesa_direitos,TINYINT(1),False,Atua em Desenvolvimento e defesa de direitos e interesses (1/0)
+area_educacao_pesquisa,TINYINT(1),False,Atua em Educação e pesquisa (1/0)
+area_outras_ativ_associativas,TINYINT(1),False,Atua em Outras atividades associativas (1/0)
+area_religiao,TINYINT(1),False,Atua em Religião (1/0)
+area_saude,TINYINT(1),False,Atua em Saúde (1/0)
+sub_assistencia_social,TINYINT(1),False,Subárea Assistência social (1/0)
+sub_assoc_nao_especificadas,TINYINT(1),False,Subárea Associações de atividades não especificadas anteriormente (1/0)
+sub_produtores_rurais_pescadores,TINYINT(1),False,"Subárea Associações de produtores rurais, pescadores e similares (1/0)"
+sub_empresariais_patronais,TINYINT(1),False,Subárea Associações empresariais e patronais (1/0)
+sub_profissionais,TINYINT(1),False,Subárea Associações profissionais (1/0)
+sub_apoio_educacao,TINYINT(1),False,Subárea Atividades de apoio à educação (1/0)
+sub_cultura_arte,TINYINT(1),False,Subárea Cultura e arte (1/0)
+sub_desenv_defesa_direitos,TINYINT(1),False,Subárea Desenvolvimento e defesa de direitos (1/0)
+sub_educacao_infantil,TINYINT(1),False,Subárea Educação infantil (1/0)
+sub_educacao_profissional,TINYINT(1),False,Subárea Educação profissional (1/0)
+sub_ensino_fundamental,TINYINT(1),False,Subárea Ensino fundamental (1/0)
+sub_ensino_superior,TINYINT(1),False,Subárea Ensino superior (1/0)
+sub_esportes_recreacao,TINYINT(1),False,Subárea Esportes e recreação (1/0)
+sub_estudos_pesquisas,TINYINT(1),False,Subárea Estudos e pesquisas (1/0)
+sub_hospitais,TINYINT(1),False,Subárea Hospitais (1/0)
+sub_outras_formas_educacao,TINYINT(1),False,Subárea Outras formas de educação e ensino (1/0)
+sub_outros_servicos_saude,TINYINT(1),False,Subárea Outros serviços de saúde (1/0)
+sub_religiao,TINYINT(1),False,Subárea Religião (1/0)
+flag_uf_imputada,TINYINT(1),False,1 = UF recuperada pelo código IBGE
+flag_tipo_estab_derivado,TINYINT(1),False,1 = matriz/filial derivado do CNPJ
+flag_tipo_estab_incoerente,TINYINT(1),False,1 = matriz/filial informado contradiz a ordem do CNPJ
+flag_fechamento_antes_fundacao,TINYINT(1),False,1 = data de fechamento anterior à fundação
+flag_cnae_invalido,TINYINT(1),False,1 = CNAE original fora do padrão (virou NULL)
+flag_coord_ajustada,TINYINT(1),False,1 = coordenada suspeita substituída pela mediana do município
+flag_coord_ausente,TINYINT(1),False,1 = OSC sem coordenadas
+flag_possivel_duplicidade,TINYINT(1),False,1 = possível duplicidade cadastral (ver dup_grupo_id)
+dup_grupo_id,INT,True,Identificador do grupo de possíveis duplicatas
+flag_outlier_n_cnae_sec,TINYINT(1),False,"1 = nº de CNAEs secundários acima do percentil 99,9"
+flag_outlier_ano_fundacao,TINYINT(1),False,1 = ano de fundação abaixo da cerca de Tukey

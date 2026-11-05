@@ -1,0 +1,20 @@
+etapa,regra,coluna,registros_afetados,acao
+texto,trim + espaços múltiplos + vazio->NULL + MAIÚSCULAS,tx_razao_social_osc,116574,padronizado
+texto,trim + espaços múltiplos + vazio->NULL + MAIÚSCULAS,tx_nome_fantasia_osc,596,padronizado
+texto,trim + espaços múltiplos + vazio->NULL + MAIÚSCULAS,tx_endereco_completo,1018538,padronizado
+ausentes,nome fantasia só com espaços,tx_nome_fantasia_osc,28,convertido em NULL
+ausentes,código IBGE inválido ('0'),cd_municipio,32,convertido em NULL
+ausentes,UF ausente recuperada pelo código IBGE,UF_Sigla,828,imputada
+ausentes,nome do município recuperado do endereço (moda por código IBGE),municipio_nome,828,imputado
+ausentes,natureza jurídica ausente,natureza_juridica,693,rótulo 'Não informada' (código NULL)
+ausentes,matriz/filial 'Não Identificado' derivado da ordem do CNPJ (0001 = matriz),matriz_filial,145930,derivado
+consistência,matriz/filial informado contradiz a ordem do CNPJ,matriz_filial,26,mantido + flag
+consistência,data de fechamento anterior à fundação,data_fechamento,5,mantido + flag
+consistência,CNAE principal fora do padrão de 5 dígitos,cnae,54,NULL + flag
+duplicidade,CNAE secundário repetido dentro da mesma OSC,cnae_secundaria,15,removido da tabela 1:N
+ausentes,OSC sem nenhuma classificação de área/subárea (ausentes em bloco),Area_* / SubArea_*,26134,preenchido com 0 + sem_classificacao_area = 1
+duplicidade,mesmo nome normalizado + município + fundação com CNPJ-base diferente,"razao_social, cd_municipio, dt_fundacao",665,mantido + flag_possivel_duplicidade + dup_grupo_id
+outliers,"n_cnae_sec acima do percentil 99,9 (34)",n_cnae_sec,1049,n_cnae_sec_aj = teto; valor original mantido em n_cnae_sec + flag
+outliers,ano de fundação abaixo da cerca de Tukey (1968),ano_fundacao,5429,mantido + flag (valores plausíveis)
+outliers,coordenada a mais de 2º (~220 km) da mediana do município,"latitude, longitude",2117,substituída pela mediana do município + flag_coord_ajustada (originais em aud_coordenada_ajustada)
+ausentes,OSC sem coordenadas (sem município válido para imputar),"latitude, longitude",184,mantido NULL + flag_coord_ausente
